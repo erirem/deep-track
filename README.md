@@ -1,2 +1,2 @@
 # deep-track
-Hybrid deep learning model for real-time railway defect detection using YOLOv8 and Mask R-CNN.
+Deepsense is a hybrid deep learning system designed for the automated detection and classification of railway defects. By combining the speed of YOLOv8 with the pixel-level accuracy of Mask R-CNN, Deepsense ensures high-precision defect localization in real-time. The system is integrated into a local web-based interface, allowing field personnel to receive immediate feedback from camera feeds without the need for cloud infrastructure.
