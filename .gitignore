@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Python cache
+*.pyc
+*.pyo
+
+# Jupyter Notebook checkpoint
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model weights
+*.pt
+*.pth
+
+# IDE/editor configs
+.vscode/
+.idea/
+
+# Environment files
+.env
+
+# Logs
+*.log
+
+# React build artifacts
+/frontend/node_modules/
+frontend/build/
+
+# Misc
+*.sqlite3
