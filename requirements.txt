@@ -1,3 +1,9 @@
 fastapi
 uvicorn
 python-multipart
+opencv-python
+pillow
+numpy
+torch
+ultralytics
+pyyaml
