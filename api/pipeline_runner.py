@@ -6,9 +6,10 @@ from roi_cropper import crop_rois
 from mask_rcnn_segmenter import load_mask_rcnn_predictor, segment_with_mask_rcnn
 
 # Model paths
-yolo_model_path = "models/yolov8_best.pt"
-mask_rcnn_config_path = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"  # Bu yol da var mı?
-mask_rcnn_weights_path = "models/model_final.pth"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+yolo_model_path = os.path.join(BASE_DIR, "models", "yolov8_best.pt")
+mask_rcnn_config_path = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
+mask_rcnn_weights_path = os.path.join(BASE_DIR, "models", "model_final.pth")
 
 CONFIDENCE_THRESHOLD = 0.8
 
