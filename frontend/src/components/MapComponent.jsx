@@ -1,30 +1,73 @@
 import React from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Özel bir marker ikonu (Leaflet default marker fix)
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
-  iconUrl: require("leaflet/dist/images/marker-icon.png"),
-  shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
-});
+const severityConfig = {
+  1: { color: "#e74c3c", level: "Seviye 4 - Kritik Risk" },
+  0: { color: "#e67e22", level: "Seviye 3 - Orta-Üst Risk" },
+  3: { color: "#e67e22", level: "Seviye 3 - Orta-Üst Risk" },
+  4: { color: "#f1c40f", level: "Seviye 2 - Orta Risk" },
+  2: { color: "#f1c40f", level: "Seviye 2 - Orta Risk" },
+  7: { color: "#2ecc71", level: "Seviye 1 - Düşük Risk" },
+};
 
-function MapComponent({ gps, timestamp }) {
-  if (!gps) return null;
+const createColoredIcon = (color) =>
+  L.divIcon({
+    className: "custom-marker",
+    html: `<div style="
+      background-color:${color};
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      border: 2px solid white;
+      box-shadow: 0 0 2px rgba(0,0,0,0.5);
+    "></div>`
+  });
 
+function MapComponent({ railLine = [], detections = [], classMap = {}, classColors = {} }) {
   return (
-    <div className="w-full h-96 mt-6 rounded overflow-hidden shadow">
-      <MapContainer center={[gps.lat, gps.lng]} zoom={10} style={{ height: "100%", width: "100%" }}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Marker position={[gps.lat, gps.lng]}>
-          <Popup>
-            <div>
-              <strong>Kusur Konumu</strong> <br />
-              🕓 {new Date(timestamp).toLocaleString()}
-            </div>
-          </Popup>
-        </Marker>
+    <div className="w-full h-[400px] mb-4 rounded overflow-hidden">
+      <MapContainer
+        center={[39.9, 31.5]}
+        zoom={7}
+        scrollWheelZoom={false}
+        style={{ height: "100%", width: "100%" }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        <Polyline positions={railLine} color="black" weight={4} />
+
+        {(detections || []).map((item, index) => {
+          const firstDefect = item.result.find(r => ![5, 6, 8].includes(r.class_id));
+          if (!firstDefect) return null;
+
+          const severity = severityConfig[firstDefect.class_id] || { color: "gray", level: "Bilinmeyen Seviye" };
+          const icon = createColoredIcon(severity.color);
+
+          return (
+            <Marker key={index} position={[item.gps.lat, item.gps.lng]} icon={icon}>
+              <Popup>
+                <strong>{item.filename}</strong><br />
+                {new Date(item.timestamp).toLocaleString()}<br />
+                <p className="mt-2"><strong style={{ color: severity.color }}>{severity.level}</strong></p>
+                <ul className="mt-2">
+                  {item.result.map((r, i) => (
+                    <li key={i}>
+                      <span style={{ color: classColors[r.class_id] || "black" }}>
+                        {classMap[r.class_id] || `Class ${r.class_id}`}
+                      </span>
+                      {` (${r.source}) – Conf: ${r.confidence}`}
+                    </li>
+                  ))}
+                </ul>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
     </div>
   );
