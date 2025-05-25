@@ -9,6 +9,7 @@ import glob
 import datetime
 
 from pipeline_runner import process_image
+from itertools import cycle
 
 app = FastAPI()
 
@@ -20,7 +21,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 📁 Görseller klasörü
+RAIL_LINE = [
+    (39.9208, 32.8541),  # Ankara
+    (39.93, 32.75),
+    (40.0, 32.4),
+    (40.1, 32.0),
+    (40.3, 31.5),
+    (40.6, 30.5),
+    (40.8, 29.8),
+    (41.0, 29.2),
+    (41.0082, 28.9784)  # İstanbul
+]
+gps_cycle = cycle(RAIL_LINE)
+
 TEST_IMAGE_FOLDER = os.path.join(os.path.dirname(__file__), "..", "test_images")
 
 @app.get("/predict-live")
@@ -34,15 +47,11 @@ def predict_live():
     if image is None:
         return JSONResponse(status_code=500, content={"error": "Image read error"})
 
-    # 🧠 Hibrit modelle tahmin
     result = process_image(selected_image_path)
 
-    # 🧭 GPS + zaman bilgisi
-    gps_lat = round(random.uniform(39.9, 40.1), 6)
-    gps_lng = round(random.uniform(30.4, 30.6), 6)
+    gps_lat, gps_lng = next(gps_cycle)
     timestamp = datetime.datetime.now().isoformat()
 
-    # 🖼 Görseli base64 olarak encode et
     _, buffer = cv2.imencode(".jpg", image)
     encoded_img = base64.b64encode(buffer).decode("utf-8")
 
@@ -52,3 +61,4 @@ def predict_live():
     result["timestamp"] = timestamp
 
     return result
+

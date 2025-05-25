@@ -15,7 +15,7 @@ function MapComponent({ gps, timestamp }) {
 
   return (
     <div className="w-full h-96 mt-6 rounded overflow-hidden shadow">
-      <MapContainer center={[gps.lat, gps.lng]} zoom={17} style={{ height: "100%", width: "100%" }}>
+      <MapContainer center={[gps.lat, gps.lng]} zoom={10} style={{ height: "100%", width: "100%" }}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Marker position={[gps.lat, gps.lng]}>
           <Popup>

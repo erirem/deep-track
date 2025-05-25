@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 function App() {
   const [data, setData] = useState(null);
   const canvasRef = useRef(null);
-  const ignoreClassIds = [5, 6, 8];
+  const ignoreClassIds = [5, 6, 8]; // Healthy Sleeper, Healthy Fastening, Healthy Rail
 
   const classMap = {
     0: "Head Check",
@@ -42,12 +42,12 @@ function App() {
           const noDetection = json.result.length === 0;
 
           if (onlyHealthy || noDetection) {
-            setData(null);
+            return;
           } else {
             setData(json);
           }
         });
-    }, 10000);
+    }, 45000);
 
     return () => clearInterval(interval);
   }, []);
@@ -88,64 +88,60 @@ function App() {
   }, [data]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center space-y-6">
-      <h1 className="text-3xl font-bold text-indigo-700">
+    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
+      <h1 className="text-3xl font-bold text-indigo-700 mb-6">
         🧠 Deep Track Live Detection
       </h1>
 
-      {data && data.gps && (
-        <div className="w-full max-w-4xl h-96 rounded overflow-hidden shadow">
-          <MapComponent gps={data.gps} timestamp={data.timestamp} />
-        </div>
-      )}
-
-      {data && data.image && (
-        <div className="w-full max-w-4xl bg-white shadow rounded-lg p-4">
-          <canvas
-            ref={canvasRef}
-            className="rounded border border-gray-300 max-w-full mx-auto"
-            style={{ maxHeight: "500px" }}
-          />
-        </div>
-      )}
-
       {data && (
-        <div className="w-full max-w-4xl bg-white shadow p-4 rounded">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">
-            📋 Tespit Özeti ({data.filename})
-          </h2>
+        <>
+          <div className="w-full max-w-4xl bg-white shadow rounded-lg p-4 mb-6">
+            <MapComponent gps={data.gps} timestamp={data.timestamp} />
 
-          <p className="text-sm text-gray-600 mb-2">
-            📍 Koordinat: {data.gps.lat}, {data.gps.lng} <br />
-            🕓 Zaman: {new Date(data.timestamp).toLocaleString()}
-          </p>
+            <canvas
+              ref={canvasRef}
+              className="rounded border border-gray-300 max-w-full"
+              style={{ maxHeight: "500px" }}
+            />
+          </div>
 
-          {data.result.filter((r) => !ignoreClassIds.includes(r.class_id)).length === 0 ? (
-            <p className="text-gray-500">Kusur tespit edilmedi.</p>
-          ) : (
-            <ul className="space-y-3">
-              {data.result
-                .filter((r) => !ignoreClassIds.includes(r.class_id))
-                .map((r, i) => (
-                  <li
-                    key={i}
-                    className="p-3 rounded bg-gray-50 border-l-4"
-                    style={{ borderColor: classColors[r.class_id] || "gray" }}
-                  >
-                    <p className="font-semibold text-gray-800">
-                      {classMap[r.class_id] || `Class ${r.class_id}`} – {" "}
-                      <span className="text-sm text-gray-600">
-                        {r.source} | Güven: {r.confidence}
-                      </span>
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Konum: [{r.bbox.join(", ")}]
-                    </p>
-                  </li>
-                ))}
-            </ul>
-          )}
-        </div>
+          <div className="w-full max-w-4xl bg-white shadow p-4 rounded">
+            <h2 className="text-xl font-semibold mb-4 text-gray-700">
+              📋 Tespit Özeti ({data.filename})
+            </h2>
+
+            <p className="text-sm text-gray-600 mb-2">
+              📍 Koordinat: {data.gps.lat}, {data.gps.lng} <br />
+              🕓 Zaman: {new Date(data.timestamp).toLocaleString()}
+            </p>
+
+            {data.result.filter((r) => !ignoreClassIds.includes(r.class_id)).length === 0 ? (
+              <p className="text-gray-500">Kusur tespit edilmedi.</p>
+            ) : (
+              <ul className="space-y-3">
+                {data.result
+                  .filter((r) => !ignoreClassIds.includes(r.class_id))
+                  .map((r, i) => (
+                    <li
+                      key={i}
+                      className="p-3 rounded bg-gray-50 border-l-4"
+                      style={{ borderColor: classColors[r.class_id] || "gray" }}
+                    >
+                      <p className="font-semibold text-gray-800">
+                        {classMap[r.class_id] || `Class ${r.class_id}`} –{" "}
+                        <span className="text-sm text-gray-600">
+                          {r.source} | Güven: {r.confidence}
+                        </span>
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Konum: [{r.bbox.join(", ")}]
+                      </p>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
