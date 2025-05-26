@@ -17,11 +17,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-gps_iterators = {
-    line_id: cycle(stations) for line_id, stations in HAT_CONFIG.items()
-}
+gps_iterators = {line_id: cycle(stations) for line_id, stations in HAT_CONFIG.items()}
 
 TEST_IMAGE_FOLDER = os.path.join(os.path.dirname(__file__), "..", "test_images")
+
 
 @app.get("/predict-live")
 def predict_live(lineId: str = Query("ankara-istanbul")):

@@ -2,7 +2,10 @@ import os
 import cv2
 from typing import List, Tuple
 
-def crop_rois(image_path: str, detections: List[dict], resize_to: Tuple[int, int] = (256, 256)):
+
+def crop_rois(
+    image_path: str, detections: List[dict], resize_to: Tuple[int, int] = (256, 256)
+):
 
     image = cv2.imread(image_path)
     if image is None:
@@ -19,11 +22,7 @@ def crop_rois(image_path: str, detections: List[dict], resize_to: Tuple[int, int
         resized = cv2.resize(roi, resize_to)
 
         crop_name = f"{filename}_bbox{idx}_class{cls}"
-        info = {
-            "crop_name": crop_name,
-            "bbox": [x1, y1, x2, y2],
-            "class": cls
-        }
+        info = {"crop_name": crop_name, "bbox": [x1, y1, x2, y2], "class": cls}
 
         roi_list.append((resized, info))
 

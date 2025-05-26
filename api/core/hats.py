@@ -13,7 +13,7 @@ HAT_CONFIG = {
         ("Bostancı", 40.9618, 29.0867),
         ("Söğütlüçeşme", 40.9855, 29.0307),
         ("Bakırköy", 40.9730, 28.8690),
-        ("Halkalı", 41.0031, 28.7789)
+        ("Halkalı", 41.0031, 28.7789),
     ],
     "istanbul-konya": [
         ("Söğütlüçeşme", 40.9855, 29.0307),
@@ -26,7 +26,7 @@ HAT_CONFIG = {
         ("Bozüyük YHT Garı", 39.9078, 29.9234),
         ("Eskişehir Garı", 39.7767, 30.5206),
         ("Selçuklu YHT Garı", 37.9084, 32.5146),
-        ("Konya Garı", 37.8724, 32.4918)
+        ("Konya Garı", 37.8724, 32.4918),
     ],
     "ankara-sivas": [
         ("Ankara YHT Garı", 39.9208, 32.8541),
@@ -38,6 +38,6 @@ HAT_CONFIG = {
         ("Sorgun YHT Garı", 39.8064, 35.1875),
         ("Akdağmadeni YHT Garı", 39.6606, 35.8867),
         ("Yıldızeli YHT Garı", 39.8704, 36.5915),
-        ("Sivas Garı", 39.7477, 37.0179)
-    ]
+        ("Sivas Garı", 39.7477, 37.0179),
+    ],
 }
