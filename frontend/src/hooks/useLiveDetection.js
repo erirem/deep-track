@@ -1,30 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
-const IGNORE_CLASS_IDS = [5, 6, 8];
-
-export default function useLiveDetection(pollingInterval = 10000) {
+const useLiveDetection = (intervalMs = 10000, lineId = "ankara-istanbul") => {
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
+  const intervalRef = useRef();
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetch("http://localhost:5000/predict-live")
+    // Hattı değiştirince geçmişi temizle
+    setData(null);
+    setHistory([]);
+
+    // Yeni interval başlat
+    clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      fetch(`http://localhost:5000/predict-live?lineId=${lineId}`)
         .then((res) => res.json())
         .then((json) => {
           const onlyHealthy = json.result.every((r) =>
-            IGNORE_CLASS_IDS.includes(r.class_id)
+            [5, 6, 8].includes(r.class_id)
           );
           const noDetection = json.result.length === 0;
-
           if (onlyHealthy || noDetection) return;
 
           setData(json);
           setHistory((prev) => [...prev, json]);
         });
-    }, pollingInterval);
+    }, intervalMs);
 
-    return () => clearInterval(interval);
-  }, [pollingInterval]);
+    return () => clearInterval(intervalRef.current);
+  }, [lineId, intervalMs]);
 
   return { data, history };
-}
+};
+
+export default useLiveDetection;

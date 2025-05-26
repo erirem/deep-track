@@ -1,93 +1,76 @@
 import React, { useState, useEffect } from "react";
 import useLiveDetection from "./hooks/useLiveDetection";
+import { useDetectionStats } from "./hooks/useDetectionStats";
+import { getFilteredDetections } from "./utils/transformDetections";
+import { exportDetectionsToCSV } from "./utils/exportToCSV";
+import { classMap, classColors, severityLevels } from "./constants/detectionConfig";
+import { HAT_CONFIG } from "./constants/hatConfig";
+
 import MapComponent from "./components/MapComponent";
 import DetectionCanvas from "./components/DetectionCanvas";
-import DetectionTable from "./components/DetectionTable";
+import DetectionStatsCards from "./components/DetectionStatsCards";
+import FilteredList from "./components/FilteredList";
+import {
+  ClipboardDocumentCheckIcon,
+  MapPinIcon,
+  ClockIcon,
+  BuildingOfficeIcon,
+  ChartBarIcon
+} from "@heroicons/react/24/outline";
 
 function App() {
-  const { data, history } = useLiveDetection(10000);
-  const [showHistory, setShowHistory] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    document.body.style.overflow = showHistory ? "hidden" : "auto";
-  }, [showHistory]);
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedLine, setSelectedLine] = useState("ankara-istanbul");
+  const { data, history } = useLiveDetection(10000, selectedLine);
 
   useEffect(() => {
     const html = document.documentElement;
     html.classList.remove("dark");
-    if (darkMode) {
-      html.classList.add("dark");
-    }
+    if (darkMode) html.classList.add("dark");
   }, [darkMode]);
 
-  const classMap = {
-    0: "Head Check",
-    1: "Rail Crack",
-    2: "Fastening Defect",
-    3: "Squat",
-    4: "Surface Defect",
-    5: "Healthy Sleeper",
-    6: "Healthy Fastening",
-    7: "Sleeper Crack",
-    8: "Healthy Rail",
+  const { totalDetections, classStats } = useDetectionStats(history, classMap);
+
+  const filteredDetections = selectedClass
+    ? getFilteredDetections(history, selectedClass, classMap)
+    : [];
+
+  const handleCSVExport = () => {
+    const source = selectedClass
+      ? filteredDetections.map(r => ({
+          ...r,
+          className: classMap[r.class_id] || r.class_id
+        }))
+      : history.flatMap(item =>
+          item.result
+            .filter(r => ![5, 6, 8].includes(r.class_id))
+            .map(r => ({
+              className: classMap[r.class_id] || r.class_id,
+              filename: item.filename,
+              source: r.source,
+              confidence: r.confidence,
+              time: item.timestamp,
+              lat: item.gps?.lat || "",
+              lng: item.gps?.lng || "",
+              station: item.gps?.station || "-",
+            }))
+        );
+
+    exportDetectionsToCSV(
+      source,
+      selectedClass ? `${selectedClass}_tespitleri.csv` : "tum_tespitler.csv"
+    );
   };
 
-  const classColors = {
-    0: "#3498db",
-    1: "#e74c3c",
-    2: "#f1c40f",
-    3: "#e67e22",
-    4: "#9b59b6",
-    5: "#2ecc71",
-    6: "#1abc9c",
-    7: "#d35400",
-    8: "#27ae60",
-  };
-
-  const severityLevels = {
-    1: { label: "Seviye 4 – Kritik", color: "bg-red-600 text-white" },
-    0: { label: "Seviye 3 – Orta", color: "bg-orange-500 text-white" },
-    3: { label: "Seviye 3 – Orta", color: "bg-orange-500 text-white" },
-    2: { label: "Seviye 2 – Düşük", color: "bg-yellow-400 text-black" },
-    4: { label: "Seviye 2 – Düşük", color: "bg-yellow-400 text-black" },
-    7: { label: "Seviye 1 – Çok Düşük", color: "bg-green-500 text-white" },
-  };
-
-  const totalDetections = history.reduce(
-    (acc, item) => acc + item.result.filter(r => ![5, 6, 8].includes(r.class_id)).length,
-    0
-  );
-
-  // ✅ Sınıf bazlı toplamlar
-  const classStats = {};
-  history.forEach(item => {
-    item.result
-      .filter(r => ![5, 6, 8].includes(r.class_id))
-      .forEach(r => {
-        const label = classMap[r.class_id] || `Class ${r.class_id}`;
-        classStats[label] = (classStats[label] || 0) + 1;
-      });
-  });
-
-  const railLine = [
-    [39.9208, 32.8541],
-    [39.93, 32.75],
-    [40.0, 32.4],
-    [40.1, 32.0],
-    [40.3, 31.5],
-    [40.6, 30.5],
-    [40.8, 29.8],
-    [41.0, 29.2],
-    [41.0082, 28.9784],
-  ];
+  const railLine = HAT_CONFIG[selectedLine].stations.map(st => [st.lat, st.lng]);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6 font-sans text-gray-800 dark:text-gray-100 transition-colors duration-300">
       {/* Başlık */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-heading font-bold text-primary dark:text-white flex-1 text-center">
-          🧠 Deep Track Live Detection
+          Deep Track Live Detection
         </h1>
         <button
           onClick={() => setDarkMode(prev => !prev)}
@@ -97,25 +80,43 @@ function App() {
         </button>
       </div>
 
-      {/* Toplam tespit sayısı */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-4 text-center">
-        <p className="text-lg font-bold text-primary dark:text-white">
-          🛠️ Toplam Tespit Sayısı: {totalDetections}
-        </p>
+      <div className="mb-4 flex items-center gap-2 justify-center">
+          <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+            Hat Seç:
+          </label>
+          <select
+            value={selectedLine}
+            onChange={(e) => setSelectedLine(e.target.value)}
+            className="text-sm border px-2 py-1 rounded dark:bg-gray-800 dark:text-white"
+          >
+            {Object.entries(HAT_CONFIG).map(([key, val]) => (
+              <option key={key} value={key}>
+                {val.name}
+              </option>
+            ))}
+          </select>
       </div>
 
-      {/* Kutucuklar halinde sınıf dağılımı */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
-        {Object.entries(classStats).map(([label, count]) => (
-          <div
-            key={label}
-            className="bg-white dark:bg-gray-800 shadow rounded-lg p-3 flex flex-col items-center justify-center text-center"
-          >
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{label}</p>
-            <p className="text-2xl font-bold text-primary dark:text-white">{count}</p>
-          </div>
-        ))}
+      {/* Toplam Sayı */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-4 text-center">
+        <div className="flex items-center justify-center gap-2 text-lg font-bold text-primary dark:text-white">
+          <ChartBarIcon className="w-5 h-5" />
+          Toplam Tespit Sayısı: {totalDetections}
+        </div>
       </div>
+
+      {/* Sınıf Kartları */}
+      <DetectionStatsCards classStats={classStats} onSelect={setSelectedClass} />
+
+      {/* Filtreli Geçmiş */}
+      {selectedClass && (
+        <FilteredList
+          selectedClass={selectedClass}
+          detections={filteredDetections}
+          onClose={() => setSelectedClass(null)}
+          onExport={handleCSVExport}
+        />
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Sol */}
@@ -131,17 +132,28 @@ function App() {
 
           {data && (
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-              <h2 className="text-xl font-heading text-primary dark:text-white font-bold mb-3">
-                📋 Tespit Özeti ({data.filename})
+              <h2 className="flex items-center gap-2 text-xl font-heading text-primary dark:text-white font-bold mb-3">
+                  <ClipboardDocumentCheckIcon className="w-6 h-6" />
+                  Tespit Özeti
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                📍 Koordinat: {data.gps.lat}, {data.gps.lng} <br />
-                🕒 Zaman: {new Date(data.timestamp).toLocaleString()}
+                  <p className="flex items-center gap-1">
+                      <MapPinIcon className="w-4 h-4" />
+                      <span className="font-semibold">Koordinat:</span> {data.gps.lat}, {data.gps.lng}
+                  </p>
+                  <p className="flex items-center gap-1">
+                      <BuildingOfficeIcon className="w-4 h-4" />
+                      <span className="font-semibold">Durak:</span> {data.gps.station}
+                  </p>
+                  <p className="flex items-center gap-1">
+                      <ClockIcon className="w-4 h-4" />
+                      <span className="font-semibold">Zaman:</span> {new Date(data.timestamp).toLocaleString()}
+                  </p>
               </p>
 
               <div className="space-y-2">
                 {data.result
-                  .filter((r) => ![5, 6, 8].includes(r.class_id))
+                  .filter(r => ![5, 6, 8].includes(r.class_id))
                   .map((r, i) => {
                     const severity = severityLevels[r.class_id];
                     return (
@@ -186,38 +198,6 @@ function App() {
               </div>
             </div>
           )}
-
-          <div className="flex justify-center">
-            <button
-              onClick={() => setShowHistory(true)}
-              className="bg-primary text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
-            >
-              📄 Tespit Geçmişini Görüntüle
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Geçmiş Paneli */}
-      <div
-        className={`fixed inset-0 z-50 bg-black bg-opacity-40 transition-opacity duration-300 ${
-          showHistory ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
-      >
-        <div
-          className={`absolute top-0 right-0 h-full w-full max-w-[800px] bg-white dark:bg-gray-900 shadow-xl transform transition-transform duration-300 ${
-            showHistory ? "translate-x-0" : "translate-x-full"
-          }`}
-        >
-          <div className="relative h-full p-6 overflow-auto">
-            <button
-              onClick={() => setShowHistory(false)}
-              className="absolute top-4 right-4 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl"
-            >
-              &times;
-            </button>
-            <DetectionTable history={history} classMap={classMap} />
-          </div>
         </div>
       </div>
     </div>
