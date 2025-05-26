@@ -1,16 +1,25 @@
-// App.js
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState, useEffect } from "react";
+import useLiveDetection from "./hooks/useLiveDetection";
 import MapComponent from "./components/MapComponent";
+import DetectionCanvas from "./components/DetectionCanvas";
+import DetectionTable from "./components/DetectionTable";
 
 function App() {
-  const [data, setData] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [selectedClassId, setSelectedClassId] = useState("all");
-  const [sortKey, setSortKey] = useState("timestamp");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const canvasRef = useRef(null);
+  const { data, history } = useLiveDetection(10000);
+  const [showHistory, setShowHistory] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
-  const ignoreClassIds = [5, 6, 8];
+  useEffect(() => {
+    document.body.style.overflow = showHistory ? "hidden" : "auto";
+  }, [showHistory]);
+
+  useEffect(() => {
+    const html = document.documentElement;
+    html.classList.remove("dark");
+    if (darkMode) {
+      html.classList.add("dark");
+    }
+  }, [darkMode]);
 
   const classMap = {
     0: "Head Check",
@@ -36,61 +45,30 @@ function App() {
     8: "#27ae60",
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetch("http://localhost:5000/predict-live")
-        .then((res) => res.json())
-        .then((json) => {
-          const onlyHealthy = json.result.every((r) =>
-            ignoreClassIds.includes(r.class_id)
-          );
+  const severityLevels = {
+    1: { label: "Seviye 4 – Kritik", color: "bg-red-600 text-white" },
+    0: { label: "Seviye 3 – Orta", color: "bg-orange-500 text-white" },
+    3: { label: "Seviye 3 – Orta", color: "bg-orange-500 text-white" },
+    2: { label: "Seviye 2 – Düşük", color: "bg-yellow-400 text-black" },
+    4: { label: "Seviye 2 – Düşük", color: "bg-yellow-400 text-black" },
+    7: { label: "Seviye 1 – Çok Düşük", color: "bg-green-500 text-white" },
+  };
 
-          const noDetection = json.result.length === 0;
+  const totalDetections = history.reduce(
+    (acc, item) => acc + item.result.filter(r => ![5, 6, 8].includes(r.class_id)).length,
+    0
+  );
 
-          if (onlyHealthy || noDetection) return;
-
-          setData(json);
-          setHistory((prev) => [...prev, json]);
-        });
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (!data || !data.image || !canvasRef.current) return;
-
-    const img = new Image();
-    img.src = `data:image/jpeg;base64,${data.image}`;
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-
-      canvas.width = img.width;
-      canvas.height = img.height;
-
-      ctx.drawImage(img, 0, 0);
-
-      data.result
-        .filter((r) => !ignoreClassIds.includes(r.class_id))
-        .forEach((r) => {
-          const [x1, y1, x2, y2] = r.bbox;
-          const color = classColors[r.class_id] || "lime";
-
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 2;
-          ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-
-          ctx.fillStyle = color;
-          ctx.font = "16px sans-serif";
-          ctx.fillText(
-            `${classMap[r.class_id] || "Unknown"} (${r.source})`,
-            x1 + 4,
-            y1 + 18
-          );
-        });
-    };
-  }, [data]);
+  // ✅ Sınıf bazlı toplamlar
+  const classStats = {};
+  history.forEach(item => {
+    item.result
+      .filter(r => ![5, 6, 8].includes(r.class_id))
+      .forEach(r => {
+        const label = classMap[r.class_id] || `Class ${r.class_id}`;
+        classStats[label] = (classStats[label] || 0) + 1;
+      });
+  });
 
   const railLine = [
     [39.9208, 32.8541],
@@ -104,190 +82,144 @@ function App() {
     [41.0082, 28.9784],
   ];
 
-  const filteredRows = history.flatMap((item, i) =>
-    item.result
-      .filter((r) => !ignoreClassIds.includes(r.class_id))
-      .filter((r) => selectedClassId === "all" || Number(selectedClassId) === r.class_id)
-      .map((r, j) => ({
-        key: `${i}-${j}`,
-        filename: item.filename,
-        timestamp: item.timestamp,
-        location: `${item.gps.lat.toFixed(5)}, ${item.gps.lng.toFixed(5)}`,
-        class_id: r.class_id,
-        defect: classMap[r.class_id],
-        source: r.source,
-        confidence: r.confidence,
-      }))
-  );
-
-  const sortedRows = [...filteredRows].sort((a, b) => {
-    if (sortKey === "confidence") {
-      return sortOrder === "asc"
-        ? a.confidence - b.confidence
-        : b.confidence - a.confidence;
-    } else {
-      const valA = a[sortKey].toString();
-      const valB = b[sortKey].toString();
-      return sortOrder === "asc"
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
-    }
-  });
-
-  const toggleSort = (key) => {
-    if (sortKey === key) {
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortOrder("asc");
-    }
-  };
-
-  const exportToCSV = () => {
-    const headers = ["Filename", "Timestamp", "Location", "Defect Type", "Source", "Confidence"];
-    const rows = sortedRows.map((row) => [
-      row.filename,
-      new Date(row.timestamp).toLocaleString(),
-      row.location,
-      row.defect,
-      row.source,
-      row.confidence,
-    ]);
-    const csvContent = [headers, ...rows]
-      .map((e) => e.map(field => `"${String(field).replace(/"/g, '""')}` ).join(","))
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "defect_history.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
-      <h1 className="text-3xl font-bold text-indigo-700 mb-6">
-        🧠 Deep Track Live Detection
-      </h1>
-
-      <div className="w-full max-w-6xl bg-white shadow rounded-lg p-4 mb-6">
-        <MapComponent
-          railLine={railLine}
-          detections={history}
-          classMap={classMap}
-          classColors={classColors}
-        />
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6 font-sans text-gray-800 dark:text-gray-100 transition-colors duration-300">
+      {/* Başlık */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-heading font-bold text-primary dark:text-white flex-1 text-center">
+          🧠 Deep Track Live Detection
+        </h1>
+        <button
+          onClick={() => setDarkMode(prev => !prev)}
+          className="ml-4 text-sm bg-gray-300 dark:bg-gray-700 text-black dark:text-white px-3 py-1 rounded"
+        >
+          {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+        </button>
       </div>
 
-      {data && (
-        <>
-          <div className="w-full max-w-4xl bg-white shadow rounded-lg p-4 mb-6">
-            <canvas
-              ref={canvasRef}
-              className="rounded border border-gray-300 max-w-full"
-              style={{ maxHeight: "500px" }}
+      {/* Toplam tespit sayısı */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-4 text-center">
+        <p className="text-lg font-bold text-primary dark:text-white">
+          🛠️ Toplam Tespit Sayısı: {totalDetections}
+        </p>
+      </div>
+
+      {/* Kutucuklar halinde sınıf dağılımı */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+        {Object.entries(classStats).map(([label, count]) => (
+          <div
+            key={label}
+            className="bg-white dark:bg-gray-800 shadow rounded-lg p-3 flex flex-col items-center justify-center text-center"
+          >
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{label}</p>
+            <p className="text-2xl font-bold text-primary dark:text-white">{count}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Sol */}
+        <div className="xl:col-span-2 space-y-6">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 h-[400px] overflow-hidden z-10 relative">
+            <MapComponent
+              railLine={railLine}
+              detections={history}
+              classMap={classMap}
+              classColors={classColors}
             />
           </div>
 
-          <div className="w-full max-w-4xl bg-white shadow p-4 rounded">
-            <h2 className="text-xl font-semibold mb-4 text-gray-700">
-              📋 Tespit Özeti ({data.filename})
-            </h2>
+          {data && (
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+              <h2 className="text-xl font-heading text-primary dark:text-white font-bold mb-3">
+                📋 Tespit Özeti ({data.filename})
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                📍 Koordinat: {data.gps.lat}, {data.gps.lng} <br />
+                🕒 Zaman: {new Date(data.timestamp).toLocaleString()}
+              </p>
 
-            <p className="text-sm text-gray-600 mb-2">
-              📍 Koordinat: {data.gps.lat}, {data.gps.lng} <br />
-              🦓 Zaman: {new Date(data.timestamp).toLocaleString()}
-            </p>
-
-            {data.result.filter((r) => !ignoreClassIds.includes(r.class_id)).length === 0 ? (
-              <p className="text-gray-500">Kusur tespit edilmedi.</p>
-            ) : (
-              <ul className="space-y-3">
+              <div className="space-y-2">
                 {data.result
-                  .filter((r) => !ignoreClassIds.includes(r.class_id))
-                  .map((r, i) => (
-                    <li
-                      key={i}
-                      className="p-3 rounded bg-gray-50 border-l-4"
-                      style={{ borderColor: classColors[r.class_id] || "gray" }}
-                    >
-                      <p className="font-semibold text-gray-800">
-                        {classMap[r.class_id] || `Class ${r.class_id}`} –{" "}
-                        <span className="text-sm text-gray-600">
-                          {r.source} | Güven: {r.confidence}
-                        </span>
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Konum: [{r.bbox.join(", ")}]
-                      </p>
-                    </li>
-                  ))}
-              </ul>
-            )}
-          </div>
-        </>
-      )}
+                  .filter((r) => ![5, 6, 8].includes(r.class_id))
+                  .map((r, i) => {
+                    const severity = severityLevels[r.class_id];
+                    return (
+                      <div
+                        key={i}
+                        className="flex justify-between items-center border-l-4 p-3 bg-white dark:bg-gray-700 rounded shadow-sm text-sm"
+                        style={{ borderColor: classColors[r.class_id] || "#999" }}
+                      >
+                        <div>
+                          <span className="font-semibold text-gray-700 dark:text-white">
+                            {classMap[r.class_id]}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-300 ml-1">
+                            – {r.source} | Güven: {r.confidence}
+                          </span>
+                        </div>
 
-      {history.length > 0 && (
-        <div className="w-full max-w-6xl bg-white shadow rounded-lg p-4 mb-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">🗂 Tespit Geçmişi</h2>
-
-          <div className="mb-4 flex items-center gap-4">
-            <div>
-              <label className="mr-2 text-sm font-medium text-gray-700">Filtrele:</label>
-              <select
-                className="border border-gray-300 rounded px-2 py-1 text-sm"
-                value={selectedClassId}
-                onChange={(e) => setSelectedClassId(e.target.value)}
-              >
-                <option value="all">Tüm Sınıflar</option>
-                {Object.entries(classMap)
-                  .filter(([id]) => !ignoreClassIds.includes(Number(id)))
-                  .map(([id, name]) => (
-                    <option key={id} value={id}>{name}</option>
-                  ))}
-              </select>
+                        {severity && (
+                          <span className={`ml-3 px-2 py-1 text-xs rounded ${severity.color}`}>
+                            {severity.label}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
+          )}
+        </div>
 
+        {/* Sağ */}
+        <div className="space-y-6 flex flex-col justify-between">
+          {data && (
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex justify-center items-center">
+              <div className="max-w-[320px] w-full">
+                <DetectionCanvas
+                  image={data.image}
+                  result={data.result}
+                  classMap={classMap}
+                  classColors={classColors}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-center">
             <button
-              onClick={exportToCSV}
-              className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700"
+              onClick={() => setShowHistory(true)}
+              className="bg-primary text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
             >
-              Export CSV
+              📄 Tespit Geçmişini Görüntüle
             </button>
           </div>
+        </div>
+      </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm text-gray-700 border border-gray-300">
-              <thead className="bg-gray-100 text-xs uppercase text-gray-600">
-                <tr>
-                  <th className="px-3 py-2 border cursor-pointer" onClick={() => toggleSort("filename")}>Filename</th>
-                  <th className="px-3 py-2 border cursor-pointer" onClick={() => toggleSort("timestamp")}>Timestamp</th>
-                  <th className="px-3 py-2 border cursor-pointer" onClick={() => toggleSort("location")}>Location</th>
-                  <th className="px-3 py-2 border cursor-pointer" onClick={() => toggleSort("defect")}>Defect Type</th>
-                  <th className="px-3 py-2 border cursor-pointer" onClick={() => toggleSort("source")}>Source</th>
-                  <th className="px-3 py-2 border cursor-pointer" onClick={() => toggleSort("confidence")}>Confidence</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedRows.map((row) => (
-                  <tr key={row.key} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 border">{row.filename}</td>
-                    <td className="px-3 py-2 border">{new Date(row.timestamp).toLocaleString()}</td>
-                    <td className="px-3 py-2 border">{row.location}</td>
-                    <td className="px-3 py-2 border">{row.defect}</td>
-                    <td className="px-3 py-2 border">{row.source}</td>
-                    <td className="px-3 py-2 border">{row.confidence}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Geçmiş Paneli */}
+      <div
+        className={`fixed inset-0 z-50 bg-black bg-opacity-40 transition-opacity duration-300 ${
+          showHistory ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+      >
+        <div
+          className={`absolute top-0 right-0 h-full w-full max-w-[800px] bg-white dark:bg-gray-900 shadow-xl transform transition-transform duration-300 ${
+            showHistory ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <div className="relative h-full p-6 overflow-auto">
+            <button
+              onClick={() => setShowHistory(false)}
+              className="absolute top-4 right-4 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl"
+            >
+              &times;
+            </button>
+            <DetectionTable history={history} classMap={classMap} />
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
