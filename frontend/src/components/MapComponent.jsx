@@ -35,7 +35,7 @@ function MapComponent({
   selectedClassId = null
 }) {
   return (
-    <div className="w-full h-[400px] mb-4 rounded overflow-hidden">
+    <div className="w-full h-[400px] mb-4 rounded overflow-hidden transition-all duration-300">
       <MapContainer
         center={railLine[0] || [39.9, 31.5]}
         zoom={7}
