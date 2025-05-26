@@ -10,30 +10,25 @@ import MapComponent from "./components/MapComponent";
 import DetectionCanvas from "./components/DetectionCanvas";
 import DetectionStatsCards from "./components/DetectionStatsCards";
 import FilteredList from "./components/FilteredList";
-import {
-  ClipboardDocumentCheckIcon,
-  MapPinIcon,
-  ClockIcon,
-  BuildingOfficeIcon,
-  ChartBarIcon
-} from "@heroicons/react/24/outline";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedLine, setSelectedLine] = useState("ankara-istanbul");
-  const { data, history } = useLiveDetection(10000, selectedLine);
+
+const { data, history } = useLiveDetection(10000, selectedLine);
+const currentLineData = data[selectedLine] || null;
+const currentLineHistory = history[selectedLine] || [];
 
   useEffect(() => {
     const html = document.documentElement;
-    html.classList.remove("dark");
-    if (darkMode) html.classList.add("dark");
+    html.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
-  const { totalDetections, classStats } = useDetectionStats(history, classMap);
+  const { totalDetections, classStats } = useDetectionStats(currentLineHistory, classMap);
 
   const filteredDetections = selectedClass
-    ? getFilteredDetections(history, selectedClass, classMap)
+    ? getFilteredDetections(currentLineHistory, selectedClass, classMap)
     : [];
 
   const handleCSVExport = () => {
@@ -42,7 +37,7 @@ function App() {
           ...r,
           className: classMap[r.class_id] || r.class_id
         }))
-      : history.flatMap(item =>
+      : currentLineHistory.flatMap(item =>
           item.result
             .filter(r => ![5, 6, 8].includes(r.class_id))
             .map(r => ({
@@ -67,7 +62,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6 font-sans text-gray-800 dark:text-gray-100 transition-colors duration-300">
-      {/* Başlık */}
+      {/* Üst başlık ve dark mode */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-heading font-bold text-primary dark:text-white flex-1 text-center">
           Deep Track Live Detection
@@ -80,35 +75,36 @@ function App() {
         </button>
       </div>
 
+      {/* Hat seçici dropdown */}
       <div className="mb-4 flex items-center gap-2 justify-center">
-          <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-            Hat Seç:
-          </label>
-          <select
-            value={selectedLine}
-            onChange={(e) => setSelectedLine(e.target.value)}
-            className="text-sm border px-2 py-1 rounded dark:bg-gray-800 dark:text-white"
-          >
-            {Object.entries(HAT_CONFIG).map(([key, val]) => (
-              <option key={key} value={key}>
-                {val.name}
-              </option>
-            ))}
-          </select>
+        <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+          Hat Seç:
+        </label>
+        <select
+          value={selectedLine}
+          onChange={(e) => {
+            setSelectedLine(e.target.value);
+            setSelectedClass(null);
+          }}
+          className="text-sm border px-2 py-1 rounded dark:bg-gray-800 dark:text-white"
+        >
+          {Object.entries(HAT_CONFIG).map(([key, val]) => (
+            <option key={key} value={key}>
+              {val.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Toplam Sayı */}
+      {/* Toplam sayılar ve sınıf kartları */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-4 text-center">
-        <div className="flex items-center justify-center gap-2 text-lg font-bold text-primary dark:text-white">
-          <ChartBarIcon className="w-5 h-5" />
+        <p className="text-lg font-bold text-primary dark:text-white">
           Toplam Tespit Sayısı: {totalDetections}
-        </div>
+        </p>
       </div>
 
-      {/* Sınıf Kartları */}
       <DetectionStatsCards classStats={classStats} onSelect={setSelectedClass} />
 
-      {/* Filtreli Geçmiş */}
       {selectedClass && (
         <FilteredList
           selectedClass={selectedClass}
@@ -118,86 +114,80 @@ function App() {
         />
       )}
 
+      {/* Harita ve canvas bölgesi */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Sol */}
         <div className="xl:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 h-[400px] overflow-hidden z-10 relative">
-            <MapComponent
-              railLine={railLine}
-              detections={history}
-              classMap={classMap}
-              classColors={classColors}
-            />
-          </div>
+          <MapComponent
+            railLine={railLine}
+            detections={currentLineHistory}
+            classMap={classMap}
+            classColors={classColors}
+            selectedClassId={
+              selectedClass
+                ? Number(Object.keys(classMap).find(k => classMap[k] === selectedClass))
+                : null
+            }
+          />
 
-          {data && (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-              <h2 className="flex items-center gap-2 text-xl font-heading text-primary dark:text-white font-bold mb-3">
-                  <ClipboardDocumentCheckIcon className="w-6 h-6" />
-                  Tespit Özeti
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  <p className="flex items-center gap-1">
-                      <MapPinIcon className="w-4 h-4" />
-                      <span className="font-semibold">Koordinat:</span> {data.gps.lat}, {data.gps.lng}
-                  </p>
-                  <p className="flex items-center gap-1">
-                      <BuildingOfficeIcon className="w-4 h-4" />
-                      <span className="font-semibold">Durak:</span> {data.gps.station}
-                  </p>
-                  <p className="flex items-center gap-1">
-                      <ClockIcon className="w-4 h-4" />
-                      <span className="font-semibold">Zaman:</span> {new Date(data.timestamp).toLocaleString()}
-                  </p>
-              </p>
+          {currentLineData && (
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+            <h2 className="text-xl font-heading text-primary dark:text-white font-bold mb-3">
+              Tespit Özeti ({currentLineData.filename})
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              Koordinat: {currentLineData.gps.lat}, {currentLineData.gps.lng} <br />
+              Durak: {currentLineData.gps.station} <br />
+              Zaman: {new Date(currentLineData.timestamp).toLocaleString()}
+            </p>
 
-              <div className="space-y-2">
-                {data.result
-                  .filter(r => ![5, 6, 8].includes(r.class_id))
-                  .map((r, i) => {
-                    const severity = severityLevels[r.class_id];
-                    return (
-                      <div
-                        key={i}
-                        className="flex justify-between items-center border-l-4 p-3 bg-white dark:bg-gray-700 rounded shadow-sm text-sm"
-                        style={{ borderColor: classColors[r.class_id] || "#999" }}
-                      >
-                        <div>
-                          <span className="font-semibold text-gray-700 dark:text-white">
-                            {classMap[r.class_id]}
-                          </span>
-                          <span className="text-gray-500 dark:text-gray-300 ml-1">
-                            – {r.source} | Güven: {r.confidence}
-                          </span>
-                        </div>
-
-                        {severity && (
-                          <span className={`ml-3 px-2 py-1 text-xs rounded ${severity.color}`}>
-                            {severity.label}
-                          </span>
-                        )}
+            <div className="space-y-2">
+              {currentLineData.result
+                .filter(r => ![5, 6, 8].includes(r.class_id))
+                .map((r, i) => {
+                  const severity = severityLevels[r.class_id];
+                  return (
+                    <div
+                      key={i}
+                      className="flex justify-between items-center border-l-4 p-3 bg-white dark:bg-gray-700 rounded shadow-sm text-sm"
+                      style={{ borderColor: classColors[r.class_id] || "#999" }}
+                    >
+                      <div>
+                        <span className="font-semibold text-gray-700 dark:text-white">
+                          {classMap[r.class_id]}
+                        </span>
+                        <span className="text-gray-500 dark:text-gray-300 ml-1">
+                          – {r.source} | Güven: {r.confidence}
+                        </span>
                       </div>
-                    );
-                  })}
-              </div>
+
+                      {severity && (
+                        <span className={`ml-3 px-2 py-1 text-xs rounded ${severity.color}`}>
+                          {severity.label}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
-          )}
+          </div>
+        )}
+
         </div>
 
-        {/* Sağ */}
+        {/* Sağ: Canvas */}
         <div className="space-y-6 flex flex-col justify-between">
-          {data && (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex justify-center items-center">
-              <div className="max-w-[320px] w-full">
-                <DetectionCanvas
-                  image={data.image}
-                  result={data.result}
-                  classMap={classMap}
-                  classColors={classColors}
-                />
-              </div>
+          {currentLineData && (
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex justify-center items-center">
+            <div className="max-w-[320px] w-full">
+              <DetectionCanvas
+                image={currentLineData.image}
+                result={currentLineData.result}
+                classMap={classMap}
+                classColors={classColors}
+              />
             </div>
-          )}
+          </div>
+        )}
         </div>
       </div>
     </div>
