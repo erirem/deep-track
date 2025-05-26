@@ -7,7 +7,7 @@ import {
   XMarkIcon,
   DocumentTextIcon,
   CpuChipIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
 
 function FilteredList({ selectedClass, detections, onClose, onExport }) {
@@ -31,7 +31,7 @@ function FilteredList({ selectedClass, detections, onClose, onExport }) {
           <button
             onClick={onClose}
             className="flex items-center gap-1 text-sm px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
-            >
+          >
             <XMarkIcon className="w-4 h-4" />
             Kapat
           </button>
@@ -40,7 +40,9 @@ function FilteredList({ selectedClass, detections, onClose, onExport }) {
 
       {/* Liste */}
       {detections.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400 italic">Henüz bu sınıfa ait tespit bulunamadı.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+          Henüz bu sınıfa ait tespit bulunamadı.
+        </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {detections.map((det, i) => (

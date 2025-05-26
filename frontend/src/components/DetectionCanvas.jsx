@@ -34,7 +34,7 @@ function DetectionCanvas({ image, result, classMap, classColors }) {
           ctx.fillText(
             `${classMap[r.class_id] || "Unknown"} (${r.source})`,
             x1 + 4,
-            y1 + 18
+            y1 + 18,
           );
         });
     };

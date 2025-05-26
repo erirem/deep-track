@@ -1,9 +1,18 @@
 export const exportDetectionsToCSV = (rows, filename = "tespitler.csv") => {
-  const headers = ["Class", "Filename", "Model", "Confidence", "Timestamp", "Latitude", "Longitude", "Station"];
+  const headers = [
+    "Class",
+    "Filename",
+    "Model",
+    "Confidence",
+    "Timestamp",
+    "Latitude",
+    "Longitude",
+    "Station",
+  ];
 
   const csvContent = [
     headers,
-    ...rows.map(row => [
+    ...rows.map((row) => [
       row.className,
       row.filename,
       row.source,
@@ -12,9 +21,11 @@ export const exportDetectionsToCSV = (rows, filename = "tespitler.csv") => {
       row.lat,
       row.lng,
       row.station,
-    ])
+    ]),
   ]
-    .map(e => e.map(field => `"${String(field).replace(/"/g, '""')}"`).join(","))
+    .map((e) =>
+      e.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(","),
+    )
     .join("\n");
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

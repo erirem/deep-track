@@ -1,5 +1,11 @@
 import React from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -22,7 +28,7 @@ const createColoredIcon = (color) =>
       border-radius:50%;
       border: 2px solid white;
       box-shadow: 0 0 2px rgba(0,0,0,0.5);
-    "></div>`
+    "></div>`,
   });
 
 function MapComponent({
@@ -30,7 +36,7 @@ function MapComponent({
   detections = [],
   classMap = {},
   classColors = {},
-  selectedClassId = null
+  selectedClassId = null,
 }) {
   return (
     <div className="w-full h-[400px] mb-4 rounded overflow-hidden transition-all duration-300">
@@ -48,37 +54,50 @@ function MapComponent({
         <Polyline positions={railLine} color="black" weight={4} />
 
         {(detections || []).map((item, index) => {
-          const firstDefect = item.result.find(r =>
-            ![5, 6, 8].includes(r.class_id) &&
-            (selectedClassId === null || r.class_id === selectedClassId)
+          const firstDefect = item.result.find(
+            (r) =>
+              ![5, 6, 8].includes(r.class_id) &&
+              (selectedClassId === null || r.class_id === selectedClassId),
           );
 
           if (!firstDefect) return null;
 
           const severity = severityConfig[firstDefect.class_id] || {
             color: "gray",
-            level: "Bilinmeyen Seviye"
+            level: "Bilinmeyen Seviye",
           };
 
           const icon = createColoredIcon(severity.color);
 
           return (
-            <Marker key={index} position={[item.gps.lat, item.gps.lng]} icon={icon}>
+            <Marker
+              key={index}
+              position={[item.gps.lat, item.gps.lng]}
+              icon={icon}
+            >
               <Popup>
-                <strong>{item.filename}</strong><br />
-                {new Date(item.timestamp).toLocaleString()}<br />
+                <strong>{item.filename}</strong>
+                <br />
+                {new Date(item.timestamp).toLocaleString()}
+                <br />
                 <p className="mt-2">
-                  <strong style={{ color: severity.color }}>{severity.level}</strong>
+                  <strong style={{ color: severity.color }}>
+                    {severity.level}
+                  </strong>
                 </p>
                 <ul className="mt-2 text-sm">
                   {item.result
-                    .filter(r =>
-                      ![5, 6, 8].includes(r.class_id) &&
-                      (selectedClassId === null || r.class_id === selectedClassId)
+                    .filter(
+                      (r) =>
+                        ![5, 6, 8].includes(r.class_id) &&
+                        (selectedClassId === null ||
+                          r.class_id === selectedClassId),
                     )
                     .map((r, i) => (
                       <li key={i}>
-                        <span style={{ color: classColors[r.class_id] || "black" }}>
+                        <span
+                          style={{ color: classColors[r.class_id] || "black" }}
+                        >
                           {classMap[r.class_id] || `Class ${r.class_id}`}
                         </span>
                         {` (${r.source}) – Conf: ${r.confidence}`}

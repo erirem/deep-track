@@ -13,19 +13,19 @@ const useLiveDetection = (intervalMs = 10000, lineId = "ankara-istanbul") => {
         .then((res) => res.json())
         .then((json) => {
           const onlyHealthy = json.result.every((r) =>
-            [5, 6, 8].includes(r.class_id)
+            [5, 6, 8].includes(r.class_id),
           );
           const noDetection = json.result.length === 0;
           if (onlyHealthy || noDetection) return;
 
           setData((prev) => ({
             ...prev,
-            [lineId]: json
+            [lineId]: json,
           }));
 
           setHistory((prev) => ({
             ...prev,
-            [lineId]: [...(prev[lineId] || []), json]
+            [lineId]: [...(prev[lineId] || []), json],
           }));
         });
     }, intervalMs);
