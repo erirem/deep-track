@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import base64, cv2, os, random, glob, datetime
 
-from pipeline_runner import process_image
-from hats import HAT_CONFIG
+from api.core.detection_pipeline import process_image
+from api.core.hats import HAT_CONFIG
 
 from itertools import cycle
 

@@ -1,0 +1,43 @@
+HAT_CONFIG = {
+    "ankara-istanbul": [
+        ("Ankara YHT Garı", 39.9208, 32.8541),
+        ("Eryaman YHT Garı", 39.9534, 32.6496),
+        ("Polatlı YHT Garı", 39.5845, 32.1454),
+        ("Eskişehir Garı", 39.7767, 30.5206),
+        ("Bozüyük YHT Garı", 39.9078, 29.9234),
+        ("Bilecik YHT Garı", 40.1429, 29.9793),
+        ("Arifiye", 40.7393, 30.4035),
+        ("İzmit Garı", 40.7654, 29.9464),
+        ("Gebze", 40.8057, 29.4307),
+        ("Pendik", 40.8835, 29.2290),
+        ("Bostancı", 40.9618, 29.0867),
+        ("Söğütlüçeşme", 40.9855, 29.0307),
+        ("Bakırköy", 40.9730, 28.8690),
+        ("Halkalı", 41.0031, 28.7789)
+    ],
+    "istanbul-konya": [
+        ("Söğütlüçeşme", 40.9855, 29.0307),
+        ("Bostancı", 40.9618, 29.0867),
+        ("Pendik", 40.8835, 29.2290),
+        ("Gebze", 40.8057, 29.4307),
+        ("İzmit Garı", 40.7654, 29.9464),
+        ("Arifiye", 40.7393, 30.4035),
+        ("Bilecik YHT Garı", 40.1429, 29.9793),
+        ("Bozüyük YHT Garı", 39.9078, 29.9234),
+        ("Eskişehir Garı", 39.7767, 30.5206),
+        ("Selçuklu YHT Garı", 37.9084, 32.5146),
+        ("Konya Garı", 37.8724, 32.4918)
+    ],
+    "ankara-sivas": [
+        ("Ankara YHT Garı", 39.9208, 32.8541),
+        ("Kayaş", 39.9464, 32.9286),
+        ("Elmadağ YHT Garı", 39.7836, 33.2250),
+        ("Kırıkkale YHT Garı", 39.8464, 33.5065),
+        ("Yerköy YHT Garı", 39.6381, 34.4724),
+        ("Yozgat YHT Garı", 39.8186, 34.7991),
+        ("Sorgun YHT Garı", 39.8064, 35.1875),
+        ("Akdağmadeni YHT Garı", 39.6606, 35.8867),
+        ("Yıldızeli YHT Garı", 39.8704, 36.5915),
+        ("Sivas Garı", 39.7477, 37.0179)
+    ]
+}

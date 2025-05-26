@@ -51,13 +51,13 @@ def segment_with_mask_rcnn(predictor, roi_images: List[Tuple[np.ndarray, dict]])
         print(f"✅ En iyi mask sınıfı: {best_class} | skor: {best_score:.2f} | mask pixel toplamı: {mask_sum}")
 
         # ✅ Predict mask'i PNG olarak kaydet
-        pred_mask_save_dir = "data/test_final/masks"
+        pred_mask_save_dir = "../data/test_final/masks"
         os.makedirs(pred_mask_save_dir, exist_ok=True)
         pred_mask_path = os.path.join(pred_mask_save_dir, f"{info['crop_name']}_pred.png")
         cv2.imwrite(pred_mask_path, (best_mask.astype("uint8") * 255))
 
         # (opsiyonel) Debug görselleri
-        os.makedirs("debug_masks", exist_ok=True)
+        os.makedirs("../debug_masks", exist_ok=True)
         cv2.imwrite(f"debug_masks/roi_{idx}.jpg", roi_img)
         cv2.imwrite(f"debug_masks/roi_{idx}_mask.jpg", best_mask.astype("uint8") * 255)
 

@@ -1,4 +1,4 @@
-from pipeline_runner import process_image
+from api.core.detection_pipeline import process_image
 
 if __name__ == "__main__":
     test_image = "test_images/img_1693.jpg"

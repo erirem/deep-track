@@ -1,9 +1,8 @@
 import cv2
 import os
-from mask_merger import merge_masks_to_original
-from yolo_detector import detect_with_yolo
-from roi_cropper import crop_rois
-from mask_rcnn_segmenter import load_mask_rcnn_predictor, segment_with_mask_rcnn
+from api.detection.yolo_detector import detect_with_yolo
+from api.image.roi_cropper import crop_rois
+from api.detection.mask_rcnn_segmenter import load_mask_rcnn_predictor, segment_with_mask_rcnn
 
 # Model paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
