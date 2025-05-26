@@ -71,9 +71,7 @@ const currentLineHistory = history[selectedLine] || [];
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6 font-sans text-gray-800 dark:text-gray-100 animate-fade-in transition-colors duration-300">
-      {/* Header */}
     <div className="flex flex-col items-center justify-center mb-6 relative">
-      {/* Dark Mode Toggle */}
       <button
         onClick={() => setDarkMode((prev) => !prev)}
         className="absolute right-0 top-0 text-sm px-3 py-1 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:shadow transition-colors duration-200"
@@ -81,7 +79,6 @@ const currentLineHistory = history[selectedLine] || [];
         {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
       </button>
 
-      {/* Başlık */}
       <div className="flex items-center justify-center gap-3 text-4xl font-heading font-bold text-primary dark:text-white mb-4">
       <svg xmlns="http://www.w3.org/2000/svg" className="w-9 h-9 text-indigo-600 dark:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
@@ -90,7 +87,6 @@ const currentLineHistory = history[selectedLine] || [];
     </div>
 
 
-      {/* Hat Seçimi Kartı */}
       <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl px-5 py-3 flex items-center gap-3 hover:shadow-lg hover:ring-1 hover:ring-primary/40 transition-all duration-300">
           <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 tracking-wide">
             Hat Seç:
@@ -132,7 +128,6 @@ const currentLineHistory = history[selectedLine] || [];
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Harita ve Tespit Özeti (Sol) */}
           <div className="lg:col-span-2 space-y-6">
             <MapComponent
               railLine={railLine}
@@ -212,7 +207,6 @@ const currentLineHistory = history[selectedLine] || [];
               </div>
           )}
 
-          {/* Sağ – Canvas */}
           <div className="w-full h-full">
             {currentLineData && (
               <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex justify-center items-center">

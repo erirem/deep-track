@@ -30,11 +30,9 @@ def merge_masks_to_original(image_path: str,
         label = f"{CLASS_NAMES.get(class_id, 'cls')} ({conf:.2f})"
         color = (0, 255, 0)  # yeşil
 
-        # Bbox çiz
         cv2.rectangle(overlay, (x1, y1), (x2, y2), color, 2)
         cv2.putText(overlay, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-        # Mask varsa uygula
         if seg is not None and "mask" in seg:
             mask = seg["mask"]
             resized_mask = cv2.resize(mask.astype('uint8'), (x2 - x1, y2 - y1))

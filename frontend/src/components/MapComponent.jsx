@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet"
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Risk seviyelerine göre renklendirme
 const severityConfig = {
   1: { color: "#e74c3c", level: "Seviye 4 - Kritik Risk" },
   0: { color: "#e67e22", level: "Seviye 3 - Orta-Üst Risk" },
@@ -13,7 +12,6 @@ const severityConfig = {
   7: { color: "#2ecc71", level: "Seviye 1 - Düşük Risk" },
 };
 
-// Marker ikonlarını oluşturur
 const createColoredIcon = (color) =>
   L.divIcon({
     className: "custom-marker",
@@ -47,10 +45,8 @@ function MapComponent({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Demiryolu hattı çizgisi */}
         <Polyline positions={railLine} color="black" weight={4} />
 
-        {/* Markerlar */}
         {(detections || []).map((item, index) => {
           const firstDefect = item.result.find(r =>
             ![5, 6, 8].includes(r.class_id) &&

@@ -1,8 +1,5 @@
-# mask_rcnn_segmenter.py
 import torch
 from detectron2.engine import DefaultPredictor
-from detectron2.config import get_cfg
-from detectron2 import model_zoo
 import cv2
 import numpy as np
 from typing import List, Tuple
@@ -16,14 +13,12 @@ def load_mask_rcnn_predictor(config_path: str, weights_path: str, score_thresh: 
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = score_thresh
     cfg.MODEL.WEIGHTS = weights_path
     cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    cfg.MODEL.ROI_HEADS.NUM_CLASSES = 3  # <<<<< burada doğru sınıf sayısı
+    cfg.MODEL.ROI_HEADS.NUM_CLASSES = 3
 
     return DefaultPredictor(cfg)
 
 def segment_with_mask_rcnn(predictor, roi_images: List[Tuple[np.ndarray, dict]]):
-    """
-    ROI görüntülerinde segmentasyon yapar ve pred mask'leri PNG olarak kaydeder.
-    """
+
     results = []
 
     for idx, (roi_img, info) in enumerate(roi_images):
@@ -50,13 +45,11 @@ def segment_with_mask_rcnn(predictor, roi_images: List[Tuple[np.ndarray, dict]])
 
         print(f"✅ En iyi mask sınıfı: {best_class} | skor: {best_score:.2f} | mask pixel toplamı: {mask_sum}")
 
-        # ✅ Predict mask'i PNG olarak kaydet
         pred_mask_save_dir = "../data/test_final/masks"
         os.makedirs(pred_mask_save_dir, exist_ok=True)
         pred_mask_path = os.path.join(pred_mask_save_dir, f"{info['crop_name']}_pred.png")
         cv2.imwrite(pred_mask_path, (best_mask.astype("uint8") * 255))
 
-        # (opsiyonel) Debug görselleri
         os.makedirs("../debug_masks", exist_ok=True)
         cv2.imwrite(f"debug_masks/roi_{idx}.jpg", roi_img)
         cv2.imwrite(f"debug_masks/roi_{idx}_mask.jpg", best_mask.astype("uint8") * 255)

@@ -3,10 +3,7 @@ import cv2
 from typing import List, Tuple
 
 def crop_rois(image_path: str, detections: List[dict], resize_to: Tuple[int, int] = (256, 256)):
-    """
-    Düşük confidence YOLO bbox'larını crop eder ve info ile birlikte döner.
-    Returns: List of (cropped_img, info_dict)
-    """
+
     image = cv2.imread(image_path)
     if image is None:
         raise FileNotFoundError(f"Görüntü bulunamadı: {image_path}")

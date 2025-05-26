@@ -18,13 +18,11 @@ const useLiveDetection = (intervalMs = 10000, lineId = "ankara-istanbul") => {
           const noDetection = json.result.length === 0;
           if (onlyHealthy || noDetection) return;
 
-          // Güncel veriyi sadece bu hat için ayarla
           setData((prev) => ({
             ...prev,
             [lineId]: json
           }));
 
-          // Geçmişi bu hatta ekle
           setHistory((prev) => ({
             ...prev,
             [lineId]: [...(prev[lineId] || []), json]
